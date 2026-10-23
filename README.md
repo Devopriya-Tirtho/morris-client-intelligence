@@ -107,9 +107,9 @@ All writes require the demo admin role and validate grouping, references, dates,
 
 ## GitHub Pages
 
-The application is Vite with relative asset paths (`base: './'`) and hash-based routes. It works under a repository subpath without server rewrites. The included `.github/workflows/pages.yml` can deploy `dist` using GitHub Actions after the source is pushed to your chosen repository and Settings → Pages → Source is set to GitHub Actions. It supports manual dispatch; it does not deploy automatically on every code change.
+The application is Vite with relative asset paths (`base: './'`) and hash-based routes. It works under a repository subpath without server rewrites. The included `.github/workflows/pages.yml` can deploy `dist` using GitHub Actions after the source is pushed to your chosen repository and Settings → Pages → Source is set to GitHub Actions. It deploys successful pushes to main and supports manual dispatch on main. Feature branches do not deploy.
 
-This refinement targets the existing `Devopriya-Tirtho/morris-client-intelligence` repository on `codex/client-experience-premium-refinement`. The Pages workflow is unchanged and manual-dispatch only. No deployment is part of this change.
+This refinement targets the existing `Devopriya-Tirtho/morris-client-intelligence` repository on `codex/final-presentation-qa-polish`. The Pages workflow now supports automatic main-branch deployment and manual dispatch. No deployment is part of this change.
 
 ## Future integration plan
 
@@ -187,15 +187,27 @@ No official logos were provided. Text placeholders are intentional; no logos or 
 
 ```bash
 git fetch origin
-git switch --track origin/codex/client-experience-premium-refinement
+git switch --track origin/codex/final-presentation-qa-polish
 npm ci
 npm test
 npm run build
 npm run preview -- --host 127.0.0.1
 ```
 
-If the branch already exists locally, use `git switch codex/client-experience-premium-refinement`. Open the local address printed by Vite, then test `/#/`, `/#/projects`, `/#/categories`, `/#/projects/p1` and `/#/presentation/1`. To compare clean seed data without losing saved edits, use a separate browser profile/incognito window. No Pages workflow needs to run for this review.
+If the branch already exists locally, use `git switch codex/final-presentation-qa-polish`. Open the local address printed by Vite, then test `/#/`, `/#/projects`, `/#/categories`, `/#/projects/p1` and `/#/presentation/1`. To compare clean seed data without losing saved edits, use a separate browser profile/incognito window. No Pages workflow needs to run for this review.
 
 ### Performance and accessibility
 
 Client projection and portfolio/filter calculations are memoized where useful. Charts and motion are split into separate vendor bundles; no application dependency was added. Count-up, route/chart transitions and hover effects respect reduced motion. Drawers contain keyboard focus, support Escape/cancel and return focus on close; page navigation includes a skip link. Charts provide text alternatives, legends and definitions, and tables scroll within their containers. These are implemented affordances; a full accessibility and responsive visual audit is still required.
+
+### Final presentation polish
+
+Start over returns to chapter 1 without changing saved data. Finish review and Exit presentation return to the overview and restore the entry role. Left/Right move between chapters; Home/End go to the first/last chapter; Escape exits. Chapter changes reset scroll and focus the heading. Longer chapters scroll naturally above the fixed navigation.
+
+Approved logo assets retain their aspect ratio and fall back to the text identity if loading fails. No official logo files are currently included. The active health index is shown as a score out of 100; milestone completion remains a percentage.
+
+### Deployment after merge
+
+The Pages workflow runs automatically on pushes to main, including a merged PR. It retains manual **Actions → Deploy prototype to GitHub Pages → Run workflow → main**. Both paths run npm ci, npm test and npm run build before deployment. A main-branch guard skips builds/deployment for manual runs on other branches.
+
+After merging, wait for both build and deploy jobs to succeed, then check the existing Pages URL and refresh a project and presentation hash route. No deployment is required to review this branch locally. See QA.md for verified evidence and outstanding presentation acceptance checks.

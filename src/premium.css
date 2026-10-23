@@ -2150,3 +2150,101 @@ table td small {
     break-inside: avoid;
   }
 }
+
+/* Final presentation pass: content determines height; controls stay reachable. */
+.presentation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.presentation-experience main {
+  margin-inline: auto;
+}
+.chapter-heading h1:focus {
+  outline: none;
+}
+.presentation-experience .insight-card p,
+.presentation-experience .card p {
+  font-size: 16px;
+  line-height: 1.65;
+}
+.partnership-lockup img {
+  max-width: 220px;
+  max-height: 60px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.premium-project,
+.card,
+.executive-stat,
+.lead-updates > a,
+.project-hero-bottom > div,
+.partnership-lockup > div {
+  min-width: 0;
+}
+.project-title h2,
+.contact-lines,
+.project-hero h1,
+.lead-updates h3 {
+  overflow-wrap: anywhere;
+}
+.premium-project {
+  display: flex;
+  flex-direction: column;
+}
+.premium-project footer {
+  margin-top: auto;
+  padding-top: 20px;
+}
+.table-scroll,
+.timeline-scroll {
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
+}
+.table-scroll select {
+  max-width: 260px;
+}
+.button {
+  flex-shrink: 0;
+}
+.button svg,
+.health-badge i {
+  flex-shrink: 0;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+@media (min-width: 951px) and (max-width: 1440px) {
+  .premium-project-grid,
+  .service-area-grid,
+  .directory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .portfolio-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 950px) {
+  .hero-focus {
+    display: block;
+  }
+}
+@media (max-width: 650px) {
+  .presentation-actions {
+    max-width: 150px;
+  }
+  .presentation-actions .button {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+  .partnership-lockup img {
+    max-width: 150px;
+  }
+}
+@media print {
+  .presentation-actions {
+    display: none;
+  }
+}

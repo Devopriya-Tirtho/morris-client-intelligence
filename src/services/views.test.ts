@@ -114,6 +114,20 @@ test("each presentation chapter renders the shared client snapshot", () => {
     const html = render(routes, "client", seed, `/presentation/${i}`);
     assert.ok(html.includes(chapters[i - 1].replace("&", "&amp;")));
     assert.match(html, /DEMONSTRATION ENVIRONMENT/);
-    assert.doesNotMatch(html, /Edit project/);
+    assert.doesNotMatch(html, /Edit project|Morris Internal|Save changes/);
+    assert.match(html, /Start over/);
+    assert.match(html, /Exit presentation/);
+    if (i === 1) assert.match(html, /out of 100/);
+    if (i === 6) {
+      for (const upcoming of seed.projects.filter(
+        (p) => p.managed.status === "Upcoming",
+      )) {
+        assert.ok(!html.includes(upcoming.narrative.value));
+      }
+    }
+    if (i === 10) {
+      assert.match(html, /Finish review/);
+      assert.doesNotMatch(html, /disabled=""/);
+    }
   }
 });

@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { usePortal } from "../services/PortalContext";
+import { projectHealth } from "../domain/experience";
 import { portfolio, analytics } from "../domain/analytics";
 import {
   PageTitle,
@@ -26,7 +27,9 @@ import { ForecastChart } from "../components/Charts";
 export function Forecast() {
   const { data } = usePortal();
   const p = portfolio(data);
-  const watch = p.active.filter((x) => x.managed.status !== "On track");
+  const watch = p.active.filter((x) =>
+    ["Watch", "At risk"].includes(projectHealth(data, x)),
+  );
   const start = Date.parse("2026-05-01"),
     end = Date.parse("2027-04-30");
   const position = (d: string) =>
@@ -134,7 +137,7 @@ export function Forecast() {
         </p>
       </Card>
       <div className="section-title">
-        <h2>Timeline watch</h2>
+        <h2>Delivery watch</h2>
         <span className="muted">{watch.length} items need a conversation</span>
       </div>
       <div className="project-grid">
@@ -146,7 +149,10 @@ export function Forecast() {
           >
             <div className="risk-box">
               <Flag size={18} />
-              <p>{x.narrative.risk}</p>
+              <p>
+                {x.narrative.risk ||
+                  "Review forecast and delivery priorities with the project lead."}
+              </p>
             </div>
             <p>{x.narrative.nextStep}</p>
             <Link className="text-link" to={`/projects/${x.id}`}>

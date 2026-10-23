@@ -61,8 +61,7 @@ export function ProjectDetail() {
       <section className="project-hero">
         <div className="row between">
           <span className="eyebrow">
-            {hierarchyLabel(data, p)} ·{" "}
-            {p.external.workOrder || "NOT INITIALIZED"}
+            {hierarchyLabel(data, p)} · {p.external.workOrder || "IN PLANNING"}
           </span>
           <HealthBadge health={projectHealth(data, p)} />
         </div>
@@ -226,7 +225,9 @@ export function ProjectDetail() {
             <p>
               {next
                 ? `Working toward ${next.name.toLowerCase()}.`
-                : "All recorded milestones are complete."}
+                : p.managed.milestones.length
+                  ? "All recorded milestones are complete."
+                  : "Agree the next delivery milestones with your project lead."}
             </p>
           </div>
           <div className="narrative-section">

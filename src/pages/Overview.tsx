@@ -233,7 +233,7 @@ export function Overview() {
           label="PORTFOLIO UTILIZATION"
           value={Math.round(p.utilization)}
           unit="%"
-          detail={`${number(p.cap)} capped hours across initialized agreements`}
+          detail={`${number(p.cap)} capped hours across confirmed agreements`}
         />
       </div>
       <div className="supporting-metrics">
@@ -244,7 +244,7 @@ export function Overview() {
                 .length
             }
           </b>{" "}
-          completed project
+          completed projects
         </span>
         <span>
           <b>{upcoming.length}</b> upcoming opportunities
@@ -290,7 +290,7 @@ export function Overview() {
           <span className="eyebrow">ATTENTION REQUIRED</span>
           <h2>The conversations that keep work moving</h2>
         </div>
-        <span className="muted">Calculated signals + published decisions</span>
+        <span className="muted">Delivery signals & decisions</span>
       </div>
       <InsightCards
         items={insights.filter((x) =>

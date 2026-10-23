@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { usePortal } from "../services/PortalContext";
 import { PageTitle, Card, Avatar, date } from "../components/ui";
@@ -6,24 +6,31 @@ import { InsightCards } from "../components/Experience";
 import { experienceInsights } from "../domain/experience";
 import type { Project } from "../domain/types";
 import { AS_OF } from "../data/seed";
-function NarrativeEditor({ project }: { project: Project }) {
+function NarrativeEditor({
+  project,
+  onDirty,
+}: {
+  project: Project;
+  onDirty: (dirty: boolean) => void;
+}) {
   const { update } = usePortal();
   const [draft, setDraft] = useState(project.narrative);
   const [saving, setSaving] = useState(false);
   const dirty = JSON.stringify(draft) !== JSON.stringify(project.narrative);
+  useEffect(() => onDirty(dirty), [dirty, onDirty]);
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
         setSaving(true);
-        await update((d) => ({
+        const saved = { ...draft, updatedAt: AS_OF };
+        const success = await update((d) => ({
           ...d,
           projects: d.projects.map((p) =>
-            p.id === project.id
-              ? { ...p, narrative: { ...draft, updatedAt: AS_OF } }
-              : p,
+            p.id === project.id ? { ...p, narrative: saved } : p,
           ),
         }));
+        if (success) setDraft(saved);
         setSaving(false);
       }}
     >
@@ -65,7 +72,7 @@ function NarrativeEditor({ project }: { project: Project }) {
           Publish this narrative to client view
         </label>
       </div>
-      <button className="button primary" disabled={saving}>
+      <button className="button primary" disabled={saving || !dirty}>
         {saving ? "Saving…" : "Save narrative"}
       </button>
       <p className="footnote">
@@ -77,6 +84,7 @@ function NarrativeEditor({ project }: { project: Project }) {
 }
 export function InsightsStudio() {
   const { data, role } = usePortal();
+  const [dirty, setDirty] = useState(false);
   const [selected, setSelected] = useState(data.projects[0]?.id || "");
   const project = data.projects.find((p) => p.id === selected);
   return (
@@ -106,8 +114,9 @@ export function InsightsStudio() {
               value={selected}
               onChange={(e) => {
                 if (
+                  !dirty ||
                   window.confirm(
-                    "Switch project? Save any narrative edits first.",
+                    "Discard unsaved narrative edits and switch project?",
                   )
                 )
                   setSelected(e.target.value);
@@ -120,7 +129,13 @@ export function InsightsStudio() {
               ))}
             </select>
           </label>
-          {project && <NarrativeEditor key={project.id} project={project} />}
+          {project && (
+            <NarrativeEditor
+              key={project.id}
+              project={project}
+              onDirty={setDirty}
+            />
+          )}
         </Card>
       )}
       <div className="lead-updates">
@@ -151,7 +166,7 @@ export function InsightsStudio() {
       </div>
       <div className="section-title">
         <div>
-          <span className="eyebrow">CALCULATED · NO LIVE AI</span>
+          <span className="eyebrow">PORTFOLIO PERSPECTIVE</span>
           <h2>Signals for the next conversation</h2>
         </div>
       </div>

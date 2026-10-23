@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowLeft, ArrowRight, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, RotateCcw, X } from "lucide-react";
 import { usePortal } from "../services/PortalContext";
 import { portfolio } from "../domain/analytics";
 import { experienceInsights } from "../domain/experience";
@@ -37,7 +37,15 @@ export function Presentation() {
   const { data, role, setRole } = usePortal();
   const previousRole = useRef(role);
   const reduced = useReducedMotion();
-  const n = Math.max(0, Math.min(9, Math.trunc(Number(chapter) || 1) - 1));
+  const n = Math.max(
+    0,
+    Math.min(chapters.length - 1, Math.trunc(Number(chapter) || 1) - 1),
+  );
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    heading.current?.focus({ preventScroll: true });
+  }, [n, role]);
   const p = useMemo(() => portfolio(data), [data]);
   const insights = useMemo(() => experienceInsights(data), [data]);
   useEffect(() => {
@@ -56,7 +64,22 @@ export function Presentation() {
         )
       )
         return;
-      if (e.key === "ArrowRight" && n < 9) {
+      if (
+        e.altKey ||
+        e.ctrlKey ||
+        e.metaKey ||
+        (e.target as HTMLElement).isContentEditable
+      )
+        return;
+      if (e.key === "Home") {
+        e.preventDefault();
+        navigate("/presentation/1");
+      }
+      if (e.key === "End") {
+        e.preventDefault();
+        navigate(`/presentation/${chapters.length}`);
+      }
+      if (e.key === "ArrowRight" && n < chapters.length - 1) {
         e.preventDefault();
         navigate(`/presentation/${n + 2}`);
       }
@@ -82,10 +105,21 @@ export function Presentation() {
     <div className="presentation-experience">
       <header>
         <Partnership compact />
-        <button className="button" onClick={() => navigate("/")}>
-          <X size={16} />
-          Exit presentation
-        </button>
+        <div className="presentation-actions">
+          <button
+            className="button"
+            onClick={() => {
+              navigate("/presentation/1");
+              window.scrollTo({ top: 0, behavior: "instant" });
+            }}
+          >
+            <RotateCcw size={16} /> Start over
+          </button>
+          <button className="button" onClick={() => navigate("/")}>
+            <X size={16} />
+            Exit presentation
+          </button>
+        </div>
       </header>
       <div className="presentation-demo">
         DEMONSTRATION ENVIRONMENT · SYNTHETIC DATA · OCTOBER 23, 2026
@@ -93,7 +127,9 @@ export function Presentation() {
       <main id="main-content">
         <div className="chapter-heading">
           <span>PARTNERSHIP REVIEW / {String(n + 1).padStart(2, "0")}</span>
-          <h1>{chapters[n]}</h1>
+          <h1 ref={heading} tabIndex={-1}>
+            {chapters[n]}
+          </h1>
           <p>
             {
               [
@@ -134,7 +170,11 @@ export function Presentation() {
                     {p.mix.length} service areas.
                   </p>
                 </div>
-                <Ring value={p.health} label="Active portfolio health index" />
+                <Ring
+                  value={p.health}
+                  label="Active portfolio health index"
+                  score
+                />
               </div>
               <div className="executive-stats">
                 <Stat
@@ -237,7 +277,12 @@ export function Presentation() {
               />
               <div className="achievement-grid">
                 {data.projects
-                  .filter((x) => x.narrative.published && x.narrative.value)
+                  .filter(
+                    (x) =>
+                      x.managed.status !== "Upcoming" &&
+                      x.narrative.published &&
+                      x.narrative.value,
+                  )
                   .map((x) => (
                     <Card
                       key={x.id}
@@ -351,13 +396,16 @@ export function Presentation() {
             ))}
           </select>
         </label>
-        <span>{n + 1} / 10</span>
+        <span aria-live="polite">
+          {n + 1} / {chapters.length}
+        </span>
         <button
           className="button primary"
-          disabled={n === 9}
-          onClick={() => navigate(`/presentation/${n + 2}`)}
+          onClick={() =>
+            navigate(n === chapters.length - 1 ? "/" : `/presentation/${n + 2}`)
+          }
         >
-          Next
+          {n === chapters.length - 1 ? "Finish review" : "Next"}
           <ArrowRight size={17} />
         </button>
       </nav>
