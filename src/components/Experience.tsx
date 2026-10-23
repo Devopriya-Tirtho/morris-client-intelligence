@@ -15,13 +15,16 @@ import {
 import type { Project } from "../domain/types";
 import { Avatar, Badge, Progress, number, date } from "./ui";
 export function Partnership({ compact = false }: { compact?: boolean }) {
+  const [clientFailed, setClientFailed] = useState(false);
+  const [partnerFailed, setPartnerFailed] = useState(false);
   return (
     <div className={`partnership-lockup ${compact ? "compact" : ""}`}>
       <div>
-        {branding.clientLogo ? (
+        {branding.clientLogo && !clientFailed ? (
           <img
             src={brandAsset(branding.clientLogo)}
             alt={branding.clientName}
+            onError={() => setClientFailed(true)}
           />
         ) : (
           <strong>{branding.clientName}</strong>
@@ -30,12 +33,16 @@ export function Partnership({ compact = false }: { compact?: boolean }) {
       </div>
       <span className="partnership-times">×</span>
       <div>
-        {branding.partnerLogo ? (
+        {branding.partnerLogo && !partnerFailed ? (
           <img
             src={brandAsset(branding.partnerLogo)}
             alt={branding.partnerName}
+            onError={() => setPartnerFailed(true)}
           />
         ) : (
+          <span>{branding.partnerName}</span>
+        )}
+        {branding.partnerLogo && !partnerFailed && (
           <span>{branding.partnerName}</span>
         )}
         <small>YOUR DELIVERY PARTNER</small>
@@ -105,13 +112,21 @@ export function Stat({
     </article>
   );
 }
-export function Ring({ value, label }: { value: number; label: string }) {
+export function Ring({
+  value,
+  label,
+  score = false,
+}: {
+  value: number;
+  label: string;
+  score?: boolean;
+}) {
   return (
     <div className="ring-wrap">
       <div
         className="premium-ring"
         role="img"
-        aria-label={`${label}: ${value}%`}
+        aria-label={`${label}: ${value}${score ? " out of 100" : "%"}`}
         style={{
           background: `conic-gradient(var(--gold) ${Math.min(100, value) * 3.6}deg, #ffffff20 0)`,
         }}
@@ -119,7 +134,7 @@ export function Ring({ value, label }: { value: number; label: string }) {
         <div>
           <b>
             {value}
-            <small>%</small>
+            <small>{score ? "/100" : "%"}</small>
           </b>
         </div>
       </div>
@@ -222,7 +237,7 @@ export function PremiumProjectCard({
         className="project-title"
         to={`/projects/${p.id}`}
       >
-        <small>{p.external.workOrder || "WORK ORDER PENDING"}</small>
+        <small>{p.external.workOrder || "IN PLANNING"}</small>
         <h2>{p.managed.name}</h2>
         <ArrowUpRight size={18} />
       </Link>
@@ -268,7 +283,10 @@ export function PremiumProjectCard({
         <Check size={15} />
         <span>
           <small>NEXT MILESTONE</small>
-          {next?.name || "All recorded milestones complete"}
+          {next?.name ||
+            (p.managed.milestones.length
+              ? "All recorded milestones complete"
+              : "Milestones to be agreed")}
         </span>
       </div>
       <footer>

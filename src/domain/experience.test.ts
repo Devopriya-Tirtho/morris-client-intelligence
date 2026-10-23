@@ -147,3 +147,50 @@ test("forecast confidence uses descriptive evidence and does not invent probabil
   );
   assert.equal(forecastConfidence(seed.projects[0], 520).label, "Indicative");
 });
+
+test("presentation seed reconciles delivery windows, lifecycle and portfolio allocations", () => {
+  const asOf = "2026-10-23";
+  const data = visibleData(seed);
+  const totals = portfolio(data);
+  assert.equal(
+    totals.hours,
+    totals.monthly.reduce((sum, month) => sum + month.hours, 0),
+  );
+  assert.equal(
+    totals.hours,
+    totals.mix.reduce((sum, category) => sum + category.hours, 0),
+  );
+  assert.equal(
+    totals.hours,
+    totals.roots.reduce(
+      (sum, project) => sum + analytics(data, project.id).hours,
+      0,
+    ),
+  );
+  for (const project of data.projects) {
+    const m = project.managed;
+    assert.ok(m.start <= m.end, project.id);
+    assert.ok(project.narrative.updatedAt <= asOf, project.id);
+    if (m.status === "Upcoming") {
+      assert.ok(m.start > asOf, project.id);
+      assert.equal(m.progress, 0);
+      assert.equal(analytics(data, project.id).hours, 0);
+    }
+    if (m.status === "Completed") {
+      assert.equal(m.progress, 100);
+      assert.ok(m.milestones.every((item) => item.done));
+      assert.ok(m.end <= asOf);
+      assert.equal(analytics(data, project.id).remaining, 0);
+    }
+    for (const entry of data.entries.filter(
+      (entry) => entry.managed.projectId === project.id,
+    )) {
+      assert.ok(
+        entry.external.date >= m.start &&
+          entry.external.date <= m.end &&
+          entry.external.date <= asOf,
+        entry.id,
+      );
+    }
+  }
+});
