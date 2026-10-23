@@ -42,6 +42,9 @@ export function Partnership({ compact = false }: { compact?: boolean }) {
         ) : (
           <span>{branding.partnerName}</span>
         )}
+        {branding.partnerLogo && !partnerFailed && (
+          <span>{branding.partnerName}</span>
+        )}
         <small>YOUR DELIVERY PARTNER</small>
       </div>
     </div>

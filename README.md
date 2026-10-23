@@ -181,7 +181,7 @@ Insight cards show their rule in **Why this appears**. Forecast confidence is de
 - `public/branding/morris/`: approved service-partner logo.
 - `src/config/branding.ts`: set relative asset paths in `clientLogo`, `partnerLogo`, and optional `heroImage`.
 
-No official logos were provided. Text placeholders are intentional; no logos or cultural graphics were invented. `brandAsset` prefixes the Vite base path so approved replacements work under the GitHub Pages repository subpath.
+The supplied Zagimē wordmark and Morris MI mark are configured. Original artwork is preserved on a white backing with text fallback. The separate morris/logo.png depicts a different emblem and is retained unchanged but not used as the Morris identity. `brandAsset` prefixes the Vite base path so approved replacements work under the GitHub Pages repository subpath.
 
 ### Local review without deployment
 
@@ -204,7 +204,7 @@ Client projection and portfolio/filter calculations are memoized where useful. C
 
 Start over returns to chapter 1 without changing saved data. Finish review and Exit presentation return to the overview and restore the entry role. Left/Right move between chapters; Home/End go to the first/last chapter; Escape exits. Chapter changes reset scroll and focus the heading. Longer chapters scroll naturally above the fixed navigation.
 
-Approved logo assets retain their aspect ratio and fall back to the text identity if loading fails. No official logo files are currently included. The active health index is shown as a score out of 100; milestone completion remains a percentage.
+Approved logo assets retain their aspect ratio and fall back to the text identity if loading fails. Supplied logo files were incorporated from main during this review. The active health index is shown as a score out of 100; milestone completion remains a percentage.
 
 ### Deployment after merge
 

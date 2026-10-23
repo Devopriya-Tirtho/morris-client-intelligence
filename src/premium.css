@@ -2248,3 +2248,14 @@ button:disabled {
     display: none;
   }
 }
+
+/* Supplied artwork stays unaltered on a neutral backing for dark surfaces. */
+.partnership-lockup img {
+  background: white;
+  padding: 6px;
+  border-radius: 5px;
+}
+.partnership-lockup > div:last-child img {
+  max-height: 46px;
+  max-width: 46px;
+}

@@ -1,6 +1,8 @@
 # Final prototype acceptance
 
 Base: main `7f20ef9b346de9a6d464adbabb8e114cdf62a2c3`.
+Logo uploads from main `9c95635949df199bffa0562baac5dc4c2db92fee` were incorporated after the initial review. Supplied images were inspected; the Zagimē wordmark and Morris MI mark are configured without recolouring or distortion.
+
 Review branch: `codex/final-presentation-qa-polish`. No merge, deployment or live integration performed.
 
 ## Executed verification
@@ -37,7 +39,7 @@ Use a fresh browser profile and the README local-review commands. Keep existing 
 
 Current visual/interactive checks are **not certified**. The cloud browser could not reach the local server. Standard Chromium download failed; an alternate packaged Chromium failed during graphics initialization. No viewport screenshots or browser interaction results are claimed. Earlier historical browser checks are not evidence for this branch.
 
-All data remains synthetic. Reporting is intentionally anchored to October 23, 2026 (May–October delivery; upcoming planning in 2027). Local edits can change the initial story; use a clean profile for the presentation baseline. Changes are browser-local, with no authentication, shared server storage or live integrations. Forecasts are indicative, not financial commitments. Official logo assets are absent; text branding remains, and configured logos have a load-error fallback. A full accessibility audit remains outstanding.
+All data remains synthetic. Reporting is intentionally anchored to October 23, 2026 (May–October delivery; upcoming planning in 2027). Local edits can change the initial story; use a clean profile for the presentation baseline. Changes are browser-local, with no authentication, shared server storage or live integrations. Forecasts are indicative, not financial commitments. Supplied logo assets are configured with a load-error text fallback; in-browser visual verification remains outstanding. A full accessibility audit remains outstanding.
 
 ## After merge
 
