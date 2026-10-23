@@ -35,19 +35,48 @@ The overview opens at `/#/`. The mock landing and role selection screen is at `/
 
 ```
 src/
-  domain/types.ts          Strongly typed domain and repository interfaces
-  domain/analytics.ts      Pure rollups, forecast, visibility and external merge policy
-  domain/analytics.test.ts Business-invariant tests
-  data/seed.ts             Deterministic synthetic portfolio (as of 2026-10-23)
-  services/repository.ts   LocalStorage repository and disabled external adapter
-  services/PortalContext.tsx Role-aware projection and local mutations
-  components/             Reusable cards, KPIs, avatars and chart components
-  pages/                  Modular route-level screens
-  App.tsx                 HashRouter, shell, roles and presentation flow
-  styles.css              Responsive visual system
+  domain/types.ts               Entities, ownership namespaces and derived view schemas
+  domain/analytics.ts           Existing rollups and client projection
+  domain/metrics.ts             Hours, burn, delay, forecast and health helpers
+  domain/intelligence.ts        Grouped work orders and attention items
+  domain/ownership.ts           Allowlisted external-only merge functions
+  domain/validation.ts          Shared command validation
+  repositories/PortalRepository.ts  Persistence interface
+  adapters/mock/                LocalStorage and isolated memory repositories
+  adapters/future/              Disabled QBO, QBO Time and Firebase placeholders
+  services/PortalService.ts     Cached reads and serialized, validated commands
+  services/repository.ts        Mock-only composition root and compatibility exports
+  services/PortalContext.tsx    React state, role projection and save feedback
+  data/seed.ts                  Deterministic synthetic portfolio (2026-10-23)
+  components/ and pages/        Existing reusable UI and route-level screens
 ```
 
-`PortalRepository` is the persistence boundary. `LocalPortalRepository` saves the full versioned demo state in this browser under `morris-zagime-prototype-v1`. No application API requests, Firebase SDK, OAuth credentials, cloud database or server dependency are present. Font files are bundled locally. Navigation uses in-memory state; it does not reread a database. Reset Demo restores the seed after explicit confirmation.
+The UI now calls `PortalService`, which depends on `PortalRepository`. The service loads one snapshot per session, clones returned data, and serializes commands against the latest state. It validates before persisting and publishes state only after a successful save. A failed save leaves the previous snapshot intact and does not block later commands. This queue is local to the service instance; it is not multi-user or cross-tab concurrency control.
+
+`LocalPortalRepository` retains the existing `morris-zagime-prototype-v1` key and version. Existing saved projects, narratives, people and allocations remain intact; the new optional client context receives an additive default. The memory adapter supports isolated tests without browser globals. Invalid JSON falls back to seed data, while structurally invalid domain records produce a load error rather than being silently published.
+
+No application API requests, Firebase SDK, OAuth credentials, cloud database or server dependency are present. Fonts are bundled locally. Reset Demo restores seed data after the existing confirmation dialog.
+
+### Service operations
+
+| Operation | Behavior |
+| --- | --- |
+| `fetchPortfolioData(role)` / `fetchPortfolio(role)` | Cached mock data, rollups and generated attention items; default client projection |
+| `fetchGroupedWorkOrders(role)` | Umbrella, descendants, linked work orders and reconciled analytics |
+| `fetchProjectDetail(id, role)` | Project, analytics, forecast, milestones, risks and decisions |
+| `fetchTeamMappings(role)` | Internal-only identity mapping view |
+| `fetchClientViewSettings(role)` | Internal visibility/publication settings |
+| `saveInternalEdits(role, id, patch)` | Changes only Morris-managed project metadata |
+| `saveNarrativeUpdate(role, update)` | Changes only narrative content |
+| `toggleClientVisibility(role, id, visible)` | Applies parent/subtree visibility before client calculations |
+| `createUpcomingProject(role, project)` | Creates a stable, uninitialized project |
+| `attachWorkOrder(role, id, workOrder)` | Attaches a synthetic future external reference without replacing manual data or status |
+| `editWorkspace(role, edit)` | Compatibility command used by existing editors; protects imported time and source project IDs |
+| `reset(role)` | Restores the original mock state |
+
+All writes require the demo admin role and validate grouping, references, dates, caps, progress, identity uniqueness and work-order uniqueness. These checks are application invariants, **not authentication**. Legacy editors can still maintain manual work-order labels; imported QBO IDs and sync timestamps are read-only there. Project creation waits for persistence before closing/navigating.
+
+`Client`, `WorkOrder`, `ProjectGroup`, `Project`, `ProjectCategory`, `TeamMember`, `TeamMemberIdentityMap`, `TimeEntry`, `PortfolioInsight`, `ProjectNarrativeUpdate`, `ForecastRecord`, `Milestone`, `RiskIssue`, `DecisionItem`, `UpcomingProject` and `ClientViewSetting` have named TypeScript contracts. Groups, identities, risks, decisions and visibility settings are views of the existing canonical fields, avoiding duplicate mutable copies. Narrative updates represent the current content, not an audit history. Existing `Person` and `Category` names remain compatibility aliases.
 
 ### Ownership of fields
 
@@ -60,7 +89,7 @@ src/
 | `TimeEntry.managed` | Morris | Project/category allocation override |
 | Derived analytics | Pure calculation | Recomputed, never persisted as source truth |
 
-`applyExternalPatch` merges only the `external` namespace. It cannot overwrite Morris metadata or narratives. Connecting an upcoming project uses its stable internal ID rather than replacing the object with a new imported project.
+`applyExternalPatch` and `applyExternalTimePatch` copy only explicitly allowed external fields, including when incoming objects contain unexpected runtime properties. It cannot overwrite Morris metadata or narratives. Connecting an upcoming project uses its stable internal ID rather than replacing the object with a new imported project.
 
 ### Analytics semantics
 
@@ -69,21 +98,23 @@ src/
 - Total effort includes approved and current unapproved hours. It does not imply billing, invoicing or approval.
 - Unallocated entries are excluded from client metrics until assigned. Person attribution uses the identity map; an unknown person does not remove otherwise allocated hours from the project total.
 - Service mix is calculated from time-entry category allocations, which may differ from a project's service line after a manual override.
-- Active forecast = actual hours / manually reported completion. Zero-progress/planned work uses the cap; completed work uses actuals. Remaining hours = max(forecast - actual, 0). This planning model is explicit and can later be replaced behind an analytics service.
+- Active forecast = actual hours / manually reported completion. Optional Morris-owned `managed.forecastOverride` supplies hours plus a required reason; it cannot forecast below actual hours. Completed actuals take precedence over overrides. Zero-progress/planned work uses the cap; completed work uses actuals. Remaining hours = max(forecast - actual, 0). This planning model is explicit and can later be replaced behind an analytics service.
 - Health = mean active item score: on track 100, attention 65, delayed 30. Counts include umbrella and scoped project items; completed/upcoming are excluded from health.
 - A hidden parent hides its entire subtree and related hours. Draft narratives are redacted from the client projection. Internal notes are stripped.
+- `forecastRecord` additionally estimates completion from observed hours per elapsed calendar day. It returns no date for completed/upcoming work or absent pace. This is a planning estimate, not a committed date.
+- `isDelayed` detects explicit delays and overdue unfinished active projects as of an injected date. Attention items cover delays, forecast-over-cap, published risks and decisions. The existing UI status badges and health scoring remain based on manually maintained status.
 - Monthly effort is the fixed May–October 2026 demo reporting window. Timeline extends through April 2027. The dates are synthetic and frozen for a repeatable presentation.
 
 ## GitHub Pages
 
 The application is Vite with relative asset paths (`base: './'`) and hash-based routes. It works under a repository subpath without server rewrites. The included `.github/workflows/pages.yml` can deploy `dist` using GitHub Actions after the source is pushed to your chosen repository and Settings → Pages → Source is set to GitHub Actions. It supports manual dispatch; it does not deploy automatically on every code change.
 
-No existing Morris production repository was modified. The source is also maintained in the preview hosting source repository. To use GitHub, upload the source to a new repository or an explicitly chosen prototype branch; do not put it into an existing production app without review.
+This refinement targets the existing `Devopriya-Tirtho/morris-client-intelligence` repository on `codex/prototype-product-refinement`. The Pages workflow is unchanged and manual-dispatch only. No deployment is part of this change.
 
 ## Future integration plan
 
 1. Add real authentication and server-side tenant/role checks. The prototype role selector is demonstration UI, not authorization. All seed data exists in the downloaded browser bundle; client projection is not a security mechanism.
-2. Introduce `clientId` tenancy and a reusable client branding configuration. Replace the fixed Zagimē seed with a repository selected by authorized tenant context.
+2. Extend the single mock `Client` context into enforced `clientId` tenancy and reusable branding. Replace the fixed Zagimē seed with a repository selected by authorized tenant context.
 3. Implement the repository against a server/API backed by Firebase. Store external records, manual overrides and client narratives separately; enforce per-client security rules and server validation.
 4. Implement QBO OAuth and QBO Time ingestion server-side, with secrets outside the frontend. Use explicit source IDs, cursor/pagination handling, approval flags, idempotency and an audit trail.
 5. Reconcile imported IDs to stable internal projects and people. Never derive manual caps from accounting data. Preserve `managed` and `narrative` fields; resolve conflicting allocations through the review queue.
@@ -95,8 +126,12 @@ The attached Gemini webhook announcement is not required for this frontend proto
 
 ## Verification
 
-`npm test` covers roll-up reconciliation, cap semantics, excluded unallocated entries, hidden descendants, narrative redaction, forecast edge cases, invalid parent mappings, protected sync fields, category/month reconciliation and person aliases. `npm run build` performs strict TypeScript checking and the production Vite bundle. Browser verification is recorded in `QA.md`.
+`npm test` runs all 30 domain and service tests, including the original 12. Coverage includes cached reads, queued writes, storage failure recovery, legacy saves, guarded attachment, disabled adapters, ownership allowlists, and roll-up reconciliation, cap semantics, excluded unallocated entries, hidden descendants, narrative redaction, forecast edge cases, invalid parent mappings, protected sync fields, category/month reconciliation and person aliases. `npm run build` performs strict TypeScript checking and the production Vite bundle. Browser verification is recorded in `QA.md`.
 
 ## Prototype limits
 
 Local edits are per browser, not shared between viewers. No billing, live sync, real authentication, email sending, server persistence or real customer data is implemented. Contact information intentionally uses `example.com` and fictional 555 numbers. Brand typography/wordmarks are illustrative. The app is designed for desktop with narrow-screen layouts, not a native mobile application.
+
+### Remaining architecture limits
+
+The new integration classes deliberately throw before doing any work. Their contracts are design seams, not working connectors or a complete import/reconciliation engine. Before implementing them, add server authorization, runtime API schemas, source-ID reconciliation, migrations, conflict handling, and audit history. No external data is automatically created, attached or synchronized. Forecast overrides and generated attention/completion views are service capabilities; this architecture pass does not add new UI controls for them. The client name and chart reporting window remain tailored to this demo.
