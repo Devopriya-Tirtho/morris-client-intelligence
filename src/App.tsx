@@ -1,16 +1,366 @@
-import {useEffect,useState} from 'react';
-import {HashRouter,Routes,Route,NavLink,Link,useLocation,useNavigate,Navigate} from 'react-router-dom';
-import {AnimatePresence,motion} from 'framer-motion';
-import {LayoutDashboard,Layers3,FolderKanban,Shapes,CalendarRange,UsersRound,ContactRound,NotebookPen,PanelLeftClose,PanelLeftOpen,Presentation,ChevronDown,ArrowUpRight,ArrowLeft,ArrowRight,LogOut,SlidersHorizontal,GitPullRequest,Eye,Lightbulb,Compass,RotateCcw,X,ShieldCheck} from 'lucide-react';
-import {PortalProvider,usePortal} from './services/PortalContext';
-import {Overview} from './pages/Overview';
-import {Projects} from './pages/Projects';
-import {ProjectDetail,NewProject} from './pages/ProjectDetail';
-import {Categories,Forecast,Team,Insights,TimeReview,ContentControls} from './pages/Intelligence';
-import type {Role} from './domain/types';
-const nav=[{path:'/',label:'Executive overview',admin:'Control centre',icon:LayoutDashboard},{path:'/portfolio',label:'Contract portfolio',icon:Layers3},{path:'/projects',label:'Projects',admin:'Project registry',icon:FolderKanban},{path:'/categories',label:'Service lines',admin:'Category manager',icon:Shapes},{path:'/forecast',label:'Forecast & timeline',icon:CalendarRange},{path:'/team',label:'Your Morris team',admin:'Team & identities',icon:UsersRound},{path:'/contacts',label:'Contact & ownership',icon:ContactRound},{path:'/insights',label:'Insight briefs',admin:'Insights studio',icon:NotebookPen}];
-const steps=[{path:'/',title:'The partnership at a glance',caption:'Start with the overall picture: effort, health and value.'},{path:'/portfolio',title:'Connected work, shared outcomes',caption:'Follow each umbrella contract into its scoped components.'},{path:'/forecast',title:'What lies ahead',caption:'Discuss capacity, delivery horizons and decisions needed.'},{path:'/insights',title:'From activity to lasting value',caption:'Close with progress, outcomes and the next conversation.'}];
-function Internal({children}:{children:React.ReactNode}){const{role}=usePortal();return role==='admin'?children:<Navigate to="/" replace/>}
-function Landing(){const{setRole}=usePortal();const navigate=useNavigate();function enter(role:Role){setRole(role);navigate('/')}return <div className="landing"><div className="landing-brand"><span className="mi-wordmark">morris<span>interactive</span></span><span>CLIENT INTELLIGENCE PORTAL</span></div><div className="landing-content"><div className="eyebrow">A PARTNERSHIP WITH PURPOSE</div><h1>Clarity for today.<br/><em>Confidence for tomorrow.</em></h1><p>A shared view of the work moving<br/>Zagimē Anishinabēk forward.</p><div className="landing-roles"><button onClick={()=>enter('client')}><Eye size={22}/><strong>Explore client view</strong><span>Your progress, people and priorities</span><ArrowUpRight size={20}/></button><button onClick={()=>enter('admin')}><SlidersHorizontal size={22}/><strong>Morris internal workspace</strong><span>Manage the story behind the insights</span><ArrowUpRight size={20}/></button></div><span className="landing-note">PROTOTYPE EXPERIENCE · SYNTHETIC DATA · NO SIGN-IN REQUIRED</span></div><div className="landing-orbits" aria-hidden="true"><i/><i/><i/></div><footer>Prepared for Zagimē Anishinabēk <span>Built on partnership. Focused on progress.</span></footer></div>}
-function Shell(){const{role,setRole,reset}=usePortal();const[collapsed,setCollapsed]=useState(false);const[presentation,setPresentation]=useState(false);const[previousRole,setPreviousRole]=useState<Role>('client');const[step,setStep]=useState(0);const[resetOpen,setResetOpen]=useState(false);const location=useLocation();const navigate=useNavigate();useEffect(()=>{window.scrollTo(0,0)},[location.pathname]);useEffect(()=>{const close=(e:KeyboardEvent)=>{if(e.key==='Escape'){setPresentation(false);if(presentation)setRole(previousRole);setResetOpen(false)}};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close)},[presentation,previousRole,setRole]);function present(){setPreviousRole(role);setRole('client');setPresentation(true);setStep(0);navigate('/')}function story(n:number){setStep(n);navigate(steps[n].path)}if(location.pathname==='/welcome')return <Landing/>;return <div className={`app ${collapsed?'collapsed':''} ${presentation?'presenting':''}`}><aside className="sidebar"><Link to="/welcome" className="brand"><span className="mi-wordmark">morris<span>interactive</span></span><span className="portal-label">CLIENT INTELLIGENCE</span></Link><div className="client-lockup"><div className="client-monogram">Z<span>✦</span></div><div><strong>Zagimē</strong><span>Anishinabēk</span></div><ChevronDown size={14}/></div><div className="nav-label">{role==='admin'?'INTERNAL WORKSPACE':'YOUR PARTNERSHIP'}</div><nav>{nav.map(n=><NavLink key={n.path} to={n.path} end={n.path==='/'} title={role==='admin'&&n.admin?n.admin:n.label}><n.icon size={18}/><span>{role==='admin'&&n.admin?n.admin:n.label}</span></NavLink>)}{role==='admin'&&<><div className="nav-label">PORTFOLIO OPERATIONS</div><NavLink to="/time"><GitPullRequest size={18}/><span>Time allocation</span></NavLink><NavLink to="/pipeline"><Compass size={18}/><span>Upcoming pipeline</span></NavLink><NavLink to="/content"><Eye size={18}/><span>Client content controls</span></NavLink></>}</nav><div className="sidebar-bottom"><div className="partner-note"><span className="partner-star">✦</span><p>Stronger together.<br/><strong>Progress with purpose.</strong></p></div><button onClick={()=>setCollapsed(!collapsed)} title={collapsed?'Expand navigation':'Collapse navigation'}>{collapsed?<PanelLeftOpen size={18}/>:<PanelLeftClose size={18}/>}<span>Collapse navigation</span></button><Link to="/welcome"><LogOut size={17}/><span>Demo landing</span></Link></div></aside><div className="main-shell"><header className="topbar"><div className="top-context"><span>Client Intelligence Portal</span><span className="divider">/</span><strong>Zagimē Anishinabēk</strong></div><div className="top-actions"><span className="demo-pill">PROTOTYPE</span><button className="presentation-button" onClick={present}><Presentation size={16}/><span>Present</span></button><label className="role-switch"><span className="role-avatar">{role==='admin'?'MI':'ZA'}</span><select aria-label="Prototype role" value={role} onChange={e=>setRole(e.target.value as Role)}><option value="client">Client view</option><option value="admin">Morris internal</option></select></label></div></header>{presentation&&<div className="presentation-header"><span className="mi-wordmark">morris<span>interactive</span></span><strong>Zagimē Anishinabēk · Partnership review</strong><button className="button" onClick={()=>{setPresentation(false);setRole(previousRole)}}><X size={16}/>Exit presentation</button></div>}<main><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={{opacity:0,y:7}} animate={{opacity:1,y:0}} exit={{opacity:0}} transition={{duration:0.18}}><Routes><Route path="/" element={<Overview/>}/><Route path="/portfolio" element={<Projects portfolioView/>}/><Route path="/projects" element={<Projects/>}/><Route path="/projects/new" element={<Internal><NewProject/></Internal>}/><Route path="/projects/:id" element={<ProjectDetail/>}/><Route path="/categories" element={<Categories/>}/><Route path="/forecast" element={<Forecast/>}/><Route path="/team" element={<Team/>}/><Route path="/contacts" element={<Team contacts/>}/><Route path="/insights" element={<Insights/>}/><Route path="/time" element={<Internal><TimeReview/></Internal>}/><Route path="/pipeline" element={<Internal><Projects pipeline/></Internal>}/><Route path="/content" element={<Internal><ContentControls/></Internal>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></motion.div></AnimatePresence><footer className="app-footer"><span><ShieldCheck size={13}/>Synthetic demo · As of October 23, 2026 · All people and contact details are fictional</span><span>Morris Interactive <i>×</i> Zagimē Anishinabēk</span>{role==='admin'&&!presentation&&<button onClick={()=>setResetOpen(true)}><RotateCcw size={12}/>Reset demo</button>}</footer></main>{presentation&&<div className="storybar"><div><span className="eyebrow">PARTNERSHIP STORY · {step+1} OF {steps.length}</span><strong>{steps[step].title}</strong><span>{steps[step].caption}</span></div><div className="story-controls"><button aria-label="Previous story step" disabled={step===0} onClick={()=>story(step-1)}><ArrowLeft size={18}/></button>{steps.map((s,i)=><button aria-label={s.title} className={`story-dot ${i===step?'active':''}`} key={s.path} onClick={()=>story(i)}/>)}<button aria-label="Next story step" disabled={step===steps.length-1} onClick={()=>story(step+1)}><ArrowRight size={18}/></button></div></div>}</div>{resetOpen&&<div className="modal-backdrop"><section className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="reset-title"><h2 id="reset-title">Restore the original demo?</h2><p>This replaces changes saved in this browser with the original synthetic projects, time entries and narratives.</p><div className="row"><button className="button" onClick={()=>setResetOpen(false)}>Keep my changes</button><button className="button primary" onClick={()=>{reset();setResetOpen(false)}}>Restore demo</button></div></section></div>}</div>}
-export default function App(){return <HashRouter><PortalProvider><Shell/></PortalProvider></HashRouter>}
+import { useEffect, useState } from "react";
+import {
+  HashRouter,
+  Routes,
+  Route,
+  NavLink,
+  Link,
+  useLocation,
+  useNavigate,
+  Navigate,
+} from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  LayoutDashboard,
+  Layers3,
+  FolderKanban,
+  Shapes,
+  CalendarRange,
+  UsersRound,
+  ContactRound,
+  NotebookPen,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Presentation as PresentationIcon,
+  GitPullRequest,
+  Eye,
+  Compass,
+  RotateCcw,
+  ArrowUpRight,
+} from "lucide-react";
+import { PortalProvider, usePortal } from "./services/PortalContext";
+import { Overview } from "./pages/Overview";
+import { Projects } from "./pages/Projects";
+import { ProjectDetail, NewProject } from "./pages/ProjectDetail";
+import { Forecast, TimeReview, ContentControls } from "./pages/Intelligence";
+import { InsightsStudio } from "./pages/InsightsStudio";
+import { ServiceAreas } from "./pages/ServiceAreas";
+import { TeamDirectory } from "./pages/TeamDirectory";
+import { Presentation } from "./pages/Presentation";
+import { Partnership } from "./components/Experience";
+import { Pacing, TeamAllocation } from "./components/PortfolioVisuals";
+import { useDialogAccessibility } from "./hooks/useDialogAccessibility";
+import type { Role } from "./domain/types";
+const nav = [
+  {
+    path: "/",
+    label: "Executive overview",
+    admin: "Control centre",
+    icon: LayoutDashboard,
+  },
+  { path: "/portfolio", label: "Contract portfolio", icon: Layers3 },
+  {
+    path: "/projects",
+    label: "Projects",
+    admin: "Project registry",
+    icon: FolderKanban,
+  },
+  {
+    path: "/categories",
+    label: "Service areas",
+    admin: "Category manager",
+    icon: Shapes,
+  },
+  { path: "/forecast", label: "Forecast & timeline", icon: CalendarRange },
+  {
+    path: "/team",
+    label: "Your Morris team",
+    admin: "Team & identities",
+    icon: UsersRound,
+  },
+  { path: "/contacts", label: "Contact & ownership", icon: ContactRound },
+  {
+    path: "/insights",
+    label: "Insight briefs",
+    admin: "Insights studio",
+    icon: NotebookPen,
+  },
+];
+function Internal({ children }: { children: React.ReactNode }) {
+  const { role } = usePortal();
+  return role === "admin" ? children : <Navigate to="/" replace />;
+}
+function Landing() {
+  const { setRole } = usePortal();
+  const navigate = useNavigate();
+  const enter = (r: Role) => {
+    setRole(r);
+    navigate("/");
+  };
+  return (
+    <div className="welcome-experience">
+      <Partnership />
+      <div>
+        <span className="eyebrow">A PARTNERSHIP WITH PURPOSE</span>
+        <h1>
+          Clarity for today.
+          <br />
+          <em>Confidence for tomorrow.</em>
+        </h1>
+        <p>
+          Your shared view of the work, people and progress supporting Zagimē
+          Anishinabēk.
+        </p>
+        <div className="landing-roles">
+          <button onClick={() => enter("client")}>
+            <Eye />
+            <strong>Client experience</strong>
+            <span>Progress, priorities and value</span>
+            <ArrowUpRight />
+          </button>
+          <button onClick={() => enter("admin")}>
+            <FolderKanban />
+            <strong>Morris internal workspace</strong>
+            <span>Records, allocation and content</span>
+            <ArrowUpRight />
+          </button>
+        </div>
+      </div>
+      <small>
+        DEMONSTRATION ENVIRONMENT · SYNTHETIC DATA · NO SIGN-IN REQUIRED
+      </small>
+    </div>
+  );
+}
+function Shell() {
+  useDialogAccessibility();
+  const { role, setRole, reset } = usePortal();
+  const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+  if (location.pathname.startsWith("/presentation"))
+    return (
+      <Routes>
+        <Route path="/presentation/:chapter?" element={<Presentation />} />
+      </Routes>
+    );
+  if (location.pathname === "/welcome") return <Landing />;
+  const label =
+    nav.find((n) => n.path === location.pathname)?.label ||
+    (
+      {
+        "/pipeline": "Upcoming pipeline",
+        "/time": "Time allocation",
+        "/content": "Client content controls",
+      } as Record<string, string>
+    )[location.pathname] ||
+    "Project detail";
+  return (
+    <div
+      className={`app premium-app ${collapsed ? "collapsed" : ""} ${role === "admin" ? "admin-mode" : "client-mode"}`}
+    >
+      <a
+        className="skip-link"
+        href="#main-content"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById("main-content")?.focus();
+        }}
+      >
+        Skip to content
+      </a>
+      <aside className="sidebar">
+        <Link className="client-brand" to="/welcome">
+          <strong>Zagimē</strong>
+          <span>Anishinabēk</span>
+          <small>CLIENT INTELLIGENCE</small>
+        </Link>
+        <div className="workspace-label">
+          {role === "admin" ? "MORRIS INTERNAL" : "YOUR PARTNERSHIP"}
+        </div>
+        <nav aria-label="Main navigation">
+          {nav.map((n) => (
+            <NavLink
+              key={n.path}
+              to={n.path}
+              end={n.path === "/"}
+              title={role === "admin" && n.admin ? n.admin : n.label}
+            >
+              <n.icon size={18} />
+              <span>{role === "admin" && n.admin ? n.admin : n.label}</span>
+            </NavLink>
+          ))}
+          {role === "admin" && (
+            <>
+              <div className="nav-label">OPERATIONS</div>
+              <NavLink to="/time" title="Time allocation">
+                <GitPullRequest size={18} />
+                <span>Time allocation</span>
+              </NavLink>
+              <NavLink to="/pipeline" title="Upcoming pipeline">
+                <Compass size={18} />
+                <span>Upcoming pipeline</span>
+              </NavLink>
+              <NavLink to="/content" title="Client content controls">
+                <Eye size={18} />
+                <span>Client content controls</span>
+              </NavLink>
+            </>
+          )}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="delivery-partner">
+            <small>DELIVERY PARTNER</small>
+            <strong>Morris Interactive</strong>
+          </div>
+          <button
+            aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+            aria-expanded={!collapsed}
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={18} />
+            ) : (
+              <PanelLeftClose size={18} />
+            )}
+            <span>{collapsed ? "Expand" : "Collapse"} navigation</span>
+          </button>
+        </div>
+      </aside>
+      <div className="main-shell">
+        <header className="topbar">
+          <div className="top-context">
+            <strong>Zagimē Anishinabēk</strong>
+            <span>
+              {role === "admin"
+                ? "Morris operations workspace"
+                : "Partnership intelligence"}
+            </span>
+          </div>
+          <div className="top-actions">
+            <button
+              className="presentation-button"
+              onClick={() => navigate("/presentation/1")}
+            >
+              <PresentationIcon size={17} />
+              <span>Present partnership</span>
+            </button>
+            <label className="role-switch">
+              <span className="sr-only">Prototype role</span>
+              <select
+                aria-label="Prototype role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as Role)}
+              >
+                <option value="client">Zagimē client view</option>
+                <option value="admin">Morris internal</option>
+              </select>
+            </label>
+          </div>
+        </header>
+        <div className="environment-strip">
+          <span>DEMONSTRATION ENVIRONMENT · SYNTHETIC DATA</span>
+          <span>
+            {role === "admin"
+              ? "INTERNAL CONTROLS"
+              : "READ-ONLY CLIENT EXPERIENCE"}
+          </span>
+        </div>
+        <main id="main-content" tabIndex={-1}>
+          <div className="page-breadcrumb">
+            <Link to="/">Partnership</Link>
+            <span>/</span>
+            <span>{label}</span>
+          </div>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: reduced ? 1 : 0, y: reduced ? 0 : 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <Routes>
+              <Route path="/" element={<Overview />} />
+              <Route path="/portfolio" element={<Projects portfolioView />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route
+                path="/projects/new"
+                element={
+                  <Internal>
+                    <NewProject />
+                  </Internal>
+                }
+              />
+              <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/categories" element={<ServiceAreas />} />
+              <Route
+                path="/forecast"
+                element={
+                  <>
+                    <Forecast />
+                    <div className="executive-columns">
+                      <Pacing />
+                      <TeamAllocation />
+                    </div>
+                  </>
+                }
+              />
+              <Route path="/team" element={<TeamDirectory />} />
+              <Route path="/contacts" element={<TeamDirectory contacts />} />
+              <Route path="/insights" element={<InsightsStudio />} />
+              <Route
+                path="/time"
+                element={
+                  <Internal>
+                    <TimeReview />
+                  </Internal>
+                }
+              />
+              <Route
+                path="/pipeline"
+                element={
+                  <Internal>
+                    <Projects pipeline />
+                  </Internal>
+                }
+              />
+              <Route
+                path="/content"
+                element={
+                  <Internal>
+                    <ContentControls />
+                  </Internal>
+                }
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </motion.div>
+          <footer className="app-footer">
+            <span>
+              Fictional people, contact details and project data · As of October
+              23, 2026
+            </span>
+            <span>Zagimē Anishinabēk × Morris Interactive</span>
+            {role === "admin" && (
+              <button
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "Restore the original synthetic demo? This replaces this browser’s edits.",
+                    )
+                  )
+                    reset();
+                }}
+              >
+                <RotateCcw size={13} />
+                Reset demo
+              </button>
+            )}
+          </footer>
+        </main>
+      </div>
+    </div>
+  );
+}
+export default function App() {
+  return (
+    <HashRouter>
+      <PortalProvider>
+        <Shell />
+      </PortalProvider>
+    </HashRouter>
+  );
+}

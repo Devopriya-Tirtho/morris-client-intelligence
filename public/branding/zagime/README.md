@@ -1,0 +1,1 @@
+Place an approved Zagimē logo here, then set clientLogo in src/config/branding.ts to branding/zagime/your-file.svg (or .png). Optional approved hero image: set heroImage. No official assets are supplied; the application uses text only. Do not substitute invented logos or cultural motifs.

@@ -14,7 +14,7 @@ npm run build
 npm run preview
 ```
 
-The overview opens at `/#/`. The mock landing and role selection screen is at `/#/welcome`. Use the header role selector to switch between Client View and Morris Internal. No login credentials are needed. Presentation Mode switches to client data, hides navigation and editing tools, and guides a four-step walkthrough; exiting restores the original role. Escape exits presentation mode.
+The overview opens at `/#/`. The mock landing and role selection screen is at `/#/welcome`. Use the header role selector to switch between Client View and Morris Internal. No login credentials are needed. Presentation Mode switches to client data, hides navigation and editing tools, and guides a ten-chapter walkthrough; exiting restores the original role. Left/Right arrows move between chapters; Escape exits and restores the previous demo role. A direct refresh starts safely in client mode.
 
 ## Included experiences
 
@@ -109,7 +109,7 @@ All writes require the demo admin role and validate grouping, references, dates,
 
 The application is Vite with relative asset paths (`base: './'`) and hash-based routes. It works under a repository subpath without server rewrites. The included `.github/workflows/pages.yml` can deploy `dist` using GitHub Actions after the source is pushed to your chosen repository and Settings → Pages → Source is set to GitHub Actions. It supports manual dispatch; it does not deploy automatically on every code change.
 
-This refinement targets the existing `Devopriya-Tirtho/morris-client-intelligence` repository on `codex/prototype-product-refinement`. The Pages workflow is unchanged and manual-dispatch only. No deployment is part of this change.
+This refinement targets the existing `Devopriya-Tirtho/morris-client-intelligence` repository on `codex/client-experience-premium-refinement`. The Pages workflow is unchanged and manual-dispatch only. No deployment is part of this change.
 
 ## Future integration plan
 
@@ -126,7 +126,7 @@ The attached Gemini webhook announcement is not required for this frontend proto
 
 ## Verification
 
-`npm test` runs all 30 domain and service tests, including the original 12. Coverage includes cached reads, queued writes, storage failure recovery, legacy saves, guarded attachment, disabled adapters, ownership allowlists, and roll-up reconciliation, cap semantics, excluded unallocated entries, hidden descendants, narrative redaction, forecast edge cases, invalid parent mappings, protected sync fields, category/month reconciliation and person aliases. `npm run build` performs strict TypeScript checking and the production Vite bundle. Browser verification is recorded in `QA.md`.
+`npm test` runs all 44 domain, service and server-render smoke tests, preserving all 30 architecture-baseline tests. Coverage includes cached reads, queued writes, storage failure recovery, legacy saves, guarded attachment, disabled adapters, ownership allowlists, and roll-up reconciliation, cap semantics, excluded unallocated entries, hidden descendants, narrative redaction, forecast edge cases, invalid parent mappings, protected sync fields, category/month reconciliation and person aliases. `npm run build` performs strict TypeScript checking and the production Vite bundle. Browser verification is recorded in `QA.md`.
 
 ## Prototype limits
 
@@ -134,4 +134,68 @@ Local edits are per browser, not shared between viewers. No billing, live sync, 
 
 ### Remaining architecture limits
 
-The new integration classes deliberately throw before doing any work. Their contracts are design seams, not working connectors or a complete import/reconciliation engine. Before implementing them, add server authorization, runtime API schemas, source-ID reconciliation, migrations, conflict handling, and audit history. No external data is automatically created, attached or synchronized. Forecast overrides and generated attention/completion views are service capabilities; this architecture pass does not add new UI controls for them. The client name and chart reporting window remain tailored to this demo.
+The new integration classes deliberately throw before doing any work. Their contracts are design seams, not working connectors or a complete import/reconciliation engine. Before implementing them, add server authorization, runtime API schemas, source-ID reconciliation, migrations, conflict handling, and audit history. No external data is automatically created, attached or synchronized. Forecast overrides now have internal editor controls. Forecast basis, projected completion and deterministic insight cards are surfaced in the client experience. The client name and chart reporting window remain tailored to this demo.
+
+
+## Premium client experience
+
+The client overview leads with the Zagimē identity, then the partnership health, delivery effort and current focus. It includes accomplishments, next work, service mix, project-lead updates and attention cards. Morris Internal opens a different operational composition: unallocated time, draft/hidden records, action queues and configuration shortcuts. The persistent demonstration label is visible in both modes and in presentations.
+
+The project registry supports card/table layouts; name, work-order, hours, utilization and target-date sorting; category/status/health/manager/parent/lifecycle filters; internal visibility filtering; and parent/category grouping. Cards identify umbrella, child, standalone and uninitialized work explicitly. Parent totals include child hours; **do not sum every card**. Project details combine purpose, pace, forecast basis, milestones, narrative, decisions, team and parent/child contribution.
+
+### Presentation chapters
+
+Open `/#/presentation/1` or choose **Present partnership**. The ten chapters are:
+1. Partnership at a Glance
+2. Our Journey Together
+3. Portfolio Overview
+4. Where Effort Is Being Invested
+5. Delivery Progress
+6. Achievements
+7. Attention & Decisions
+8. Upcoming Work
+9. Team & Contacts
+10. Next Steps
+
+All chapters read the same client-projected snapshot. No separate presentation data is maintained. Previous/Next, the chapter selector, Left/Right arrows and Escape support navigation. Links on presentation project/insight cards do not leave the walkthrough. Operational navigation and edit controls are absent. Milestone achievements are cumulative manually reported counts; the monthly journey reflects actual recorded effort, not historical status snapshots.
+
+### Category lifecycle
+
+Categories retain stable IDs. The internal manager supports name, description, curated icon, accent colour, ordering, default selection, archive/merge and restore. Archiving an assigned/default category requires a destination: both project category IDs and reporting-time allocations move together, without changing source time. A default transfers to the destination. Restoring a category does not undo prior reassignment. Duplicate active names and direct archival with remaining assignments are rejected by shared validation. Existing browser saves receive optional presentation defaults without replacing authored fields.
+
+### Team and time ownership
+
+Contact cards expose display name, role, expertise, project role and fictional contact details. Internal profiles have a client visibility flag and multiple source identity aliases. Hidden people are omitted from client directories; their recorded project hours remain counted. Unshared managers display a neutral fallback. Source time includes an optional raw work-order label, displayed separately from editable Morris reporting allocation. Legacy records without that source field display **Not supplied**, rather than inventing history from current reporting allocation.
+
+Attaching a work-order label through the project editor retains the project ID, description, grouping, caps, team, milestones, notes and narrative. An Upcoming record becomes On track when attached unless the editor explicitly selects another status. This remains a mock identity change, not an import or sync.
+
+### Insight rules and definitions
+
+`src/domain/experience.ts` contains deterministic, tested rules. Utilization below 85% is within plan, 85–100% approaches cap, and above 100% exceeds cap. Health is Planned/Complete for those lifecycle states; active work is At risk for delayed/overdue status or actual effort over cap, Watch for attention/forecast over cap or ≥85% utilization, otherwise Healthy. This derived badge is intentionally separate from the manually maintained status and original portfolio health index.
+
+Insight cards show their rule in **Why this appears**. Forecast confidence is descriptive evidence (actual delivered, manager estimate, indicative, limited evidence), not an invented probability. Raw approvals are preserved; total effort includes current unapproved hours. No live AI is used.
+
+### Branding assets
+
+- `public/branding/zagime/`: approved client logo or optional hero asset.
+- `public/branding/morris/`: approved service-partner logo.
+- `src/config/branding.ts`: set relative asset paths in `clientLogo`, `partnerLogo`, and optional `heroImage`.
+
+No official logos were provided. Text placeholders are intentional; no logos or cultural graphics were invented. `brandAsset` prefixes the Vite base path so approved replacements work under the GitHub Pages repository subpath.
+
+### Local review without deployment
+
+```bash
+git fetch origin
+git switch --track origin/codex/client-experience-premium-refinement
+npm ci
+npm test
+npm run build
+npm run preview -- --host 127.0.0.1
+```
+
+If the branch already exists locally, use `git switch codex/client-experience-premium-refinement`. Open the local address printed by Vite, then test `/#/`, `/#/projects`, `/#/categories`, `/#/projects/p1` and `/#/presentation/1`. To compare clean seed data without losing saved edits, use a separate browser profile/incognito window. No Pages workflow needs to run for this review.
+
+### Performance and accessibility
+
+Client projection and portfolio/filter calculations are memoized where useful. Charts and motion are split into separate vendor bundles; no application dependency was added. Count-up, route/chart transitions and hover effects respect reduced motion. Drawers contain keyboard focus, support Escape/cancel and return focus on close; page navigation includes a skip link. Charts provide text alternatives, legends and definitions, and tables scroll within their containers. These are implemented affordances; a full accessibility and responsive visual audit is still required.

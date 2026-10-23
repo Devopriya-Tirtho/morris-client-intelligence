@@ -1,14 +1,353 @@
-import {newId} from '../domain/id';
-import {useState} from 'react';
-import {useParams,useNavigate,Link} from 'react-router-dom';
-import {Pencil,Check,ShieldCheck,Clock3,Target,TrendingUp,X,Flag,ArrowUpRight} from 'lucide-react';
-import {usePortal} from '../services/PortalContext';
-import type {Project,Status} from '../domain/types';
-import {analytics,canParent} from '../domain/analytics';
-import {Card,PageTitle,Metric,Badge,Progress,Avatar,Breadcrumb,ProjectCard,date,number} from '../components/ui';
-import {BurnChart} from '../components/Charts';
-import {AS_OF} from '../data/seed';
-function blank():Project{return {id:newId(),external:{workOrder:null,qboProjectId:null,lastSyncedAt:null},managed:{name:'',parentId:null,categoryId:'c1',status:'Upcoming',start:'2026-11-01',end:'2027-02-01',cap:100,monthlyCap:25,progress:0,managerId:'person0',teamIds:['person0'],visible:false,description:'',internalNotes:'',milestones:[]},narrative:{summary:'',value:'',risk:'',decision:'',nextStep:'',updatedAt:AS_OF,published:false}}}
-export function ProjectEditor({project,onClose,isNew=false}:{project:Project;onClose:()=>void;isNew?:boolean}){const{data,update}=usePortal();const[draft,setDraft]=useState<Project>(structuredClone(project));const[error,setError]=useState('');const navigate=useNavigate();const m=draft.managed;function field<K extends keyof Project['managed']>(key:K,value:Project['managed'][K]){setDraft({...draft,managed:{...m,[key]:value}})}async function save(e:React.FormEvent){e.preventDefault();if(!m.name.trim())return setError('Enter a project name.');if(m.end<m.start)return setError('Target completion must be after the start date.');if(!canParent(data.projects,draft.id,m.parentId))return setError('Choose an umbrella project outside this project’s descendants.');if(m.parentId&&data.projects.some(p=>p.managed.parentId===draft.id))return setError('This umbrella has children. Move its sub-projects before grouping it under another project.');if(draft.external.workOrder&&data.projects.some(p=>p.id!==draft.id&&p.external.workOrder===draft.external.workOrder))return setError('That work order is already assigned.');const saved=await update(d=>({...d,projects:isNew?[...d.projects,draft]:d.projects.map(p=>p.id===draft.id?draft:p)}));if(!saved)return;onClose();if(isNew)navigate(`/projects/${draft.id}`)}return <div className="modal-backdrop" onClick={onClose}><section className="editor" role="dialog" aria-modal="true" aria-labelledby="editor-title" onClick={e=>e.stopPropagation()}><div className="editor-header"><div><div className="eyebrow">MORRIS INTERNAL</div><h2 id="editor-title">{isNew?'Create a project':'Edit project details'}</h2></div><button className="icon-button" aria-label="Close editor" onClick={onClose}><X/></button></div><form onSubmit={save}><div className="protected-note"><ShieldCheck size={18}/>Morris-managed fields stay protected from future automated syncs.</div><div className="form-grid"><label className="full">Project name<input required value={m.name} onChange={e=>field('name',e.target.value)}/></label><label>Work order <span className="muted">(optional)</span><input placeholder="Not initialized" value={draft.external.workOrder||''} onChange={e=>setDraft({...draft,external:{...draft.external,workOrder:e.target.value.trim()||null}})}/></label><label>Umbrella project<select value={m.parentId||''} onChange={e=>field('parentId',e.target.value||null)}><option value="">Standalone / umbrella</option>{data.projects.filter(p=>p.id!==draft.id&&!p.managed.parentId&&canParent(data.projects,draft.id,p.id)).map(p=><option key={p.id} value={p.id}>{p.external.workOrder||'Upcoming'} · {p.managed.name}</option>)}</select></label><label>Service line<select value={m.categoryId} onChange={e=>field('categoryId',e.target.value)}>{data.categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label>Status<select value={m.status} onChange={e=>field('status',e.target.value as Status)}>{['On track','Attention','Delayed','Completed','Upcoming'].map(s=><option key={s}>{s}</option>)}</select></label><label>Start date<input type="date" required value={m.start} onChange={e=>field('start',e.target.value)}/></label><label>Target completion<input type="date" required value={m.end} onChange={e=>field('end',e.target.value)}/></label><label>Hours cap<input type="number" min="0" required value={m.cap} onChange={e=>field('cap',Number(e.target.value))}/></label><label>Monthly cap<input type="number" min="0" required value={m.monthlyCap} onChange={e=>field('monthlyCap',Number(e.target.value))}/></label><label>Reported progress (%)<input type="number" min="0" max="100" required value={m.progress} onChange={e=>field('progress',Number(e.target.value))}/></label><label>Project manager<select value={m.managerId} onChange={e=>field('managerId',e.target.value)}>{data.people.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label className="full">Project description<textarea rows={3} value={m.description} onChange={e=>field('description',e.target.value)}/></label><fieldset className="full"><legend>Assigned team</legend><div className="checks">{data.people.map(p=><label key={p.id}><input type="checkbox" checked={m.teamIds.includes(p.id)} onChange={e=>field('teamIds',e.target.checked?[...m.teamIds,p.id]:m.teamIds.filter(id=>id!==p.id))}/>{p.name}</label>)}</div></fieldset><fieldset className="full"><legend>Milestone tracker</legend>{m.milestones.map((x,i)=><label className="check-label" key={x.id}><input type="checkbox" checked={x.done} onChange={e=>field('milestones',m.milestones.map((v,j)=>j===i?{...v,done:e.target.checked}:v))}/>{x.name}</label>)}<button type="button" className="button subtle" onClick={()=>field('milestones',[...m.milestones,{id:newId(),name:`Milestone ${m.milestones.length+1}`,done:false}])}>Add milestone</button>{m.milestones.map((x,i)=><input aria-label={`Milestone ${i+1} name`} key={x.id} value={x.name} onChange={e=>field('milestones',m.milestones.map((v,j)=>i===j?{...v,name:e.target.value}:v))}/>)}</fieldset><label className="full">Internal notes<textarea rows={2} value={m.internalNotes} onChange={e=>field('internalNotes',e.target.value)}/></label><label className="check-label full"><input type="checkbox" checked={m.visible} onChange={e=>field('visible',e.target.checked)}/>Visible to client</label></div>{error&&<p className="error" role="alert">{error}</p>}<div className="editor-footer"><button type="button" className="button" onClick={onClose}>Cancel</button><button className="button primary" type="submit">{isNew?'Create project':'Save changes'}</button></div></form></section></div>}
-export function NewProject(){const{role}=usePortal();const navigate=useNavigate();const [project]=useState(blank);return role==='admin'?<ProjectEditor project={project} isNew onClose={()=>navigate('/projects')}/>:<PageTitle title="Morris internal workspace" description="Switch to Morris Internal to create a project."/>}
-export function ProjectDetail(){const{id}=useParams();const{data,role,update}=usePortal();const[editing,setEditing]=useState(false);const p=data.projects.find(x=>x.id===id);if(!p)return <PageTitle title="Project unavailable" description="This project may not be shared with the client. Return to Projects to explore available work."/>;const a=analytics(data,p.id);const children=data.projects.filter(x=>x.managed.parentId===p.id);const pm=data.people.find(x=>x.id===p.managed.managerId)!;const parent=data.projects.find(x=>x.id===p.managed.parentId);const category=data.categories.find(x=>x.id===p.managed.categoryId);const over=a.forecast>p.managed.cap;return <><Breadcrumb>{p.external.workOrder||'Upcoming project'}</Breadcrumb><PageTitle eyebrow={p.external.workOrder||'UPCOMING · NOT INITIALIZED'} title={p.managed.name} description={category?.name||''} action={<div className="row"><Badge status={p.managed.status}/>{role==='admin'&&<button className="button primary" onClick={()=>setEditing(true)}><Pencil size={15}/>Edit project</button>}</div>}/>{parent&&<Link className="parent-link" to={`/projects/${parent.id}`}>Part of {parent.external.workOrder} · {parent.managed.name}<ArrowUpRight size={14}/></Link>}<div className="project-intro"><p>{p.managed.description}</p><div><span>START DATE<strong>{date(p.managed.start)}</strong></span><span>TARGET COMPLETION<strong>{date(p.managed.end)}</strong></span><span>PROJECT LEAD<strong>{pm.name}</strong></span></div></div><div className="metrics-grid three"><Metric label="HOURS INVESTED" value={number(a.hours)} unit="hrs" detail={children.length?'Includes all child projects + direct time':'Direct project time'} icon={<Clock3 size={18}/>}/><Metric label="UTILIZATION AGAINST CAP" value={Math.round(a.utilization)} unit="%" detail={`${number(p.managed.cap)} hrs total · ${p.managed.monthlyCap} hrs monthly cap`} icon={<Target size={18}/>}/><Metric label="FORECAST AT COMPLETION" value={number(a.forecast)} unit="hrs" detail={over?`${number(a.forecast-p.managed.cap)} hrs above agreed cap`:`${number(p.managed.cap-a.forecast)} hrs within agreed cap`} icon={<TrendingUp size={18}/>} accent/></div><div className="detail-grid"><Card title="Effort over time" eyebrow="PROJECT MOMENTUM"><BurnChart projectId={p.id}/><div className="chart-footer"><span>October effort: <b>{number(a.monthly[5])} hrs</b></span><span>Monthly cap: {p.managed.monthlyCap} hrs</span></div>{a.monthly[5]>p.managed.monthlyCap&&<p className="warning-text">October effort exceeds the monthly cap by {number(a.monthly[5]-p.managed.monthlyCap)} hours.</p>}<p className="footnote">Forecast = hours worked ÷ reported completion. Upcoming work uses its estimated cap; completed work uses actual hours. This is a planning estimate.</p></Card><Card title="From alignment to impact" eyebrow="DELIVERY PROGRESS"><div className="big-progress">{p.managed.progress}<small>% complete</small></div><Progress value={p.managed.progress}/><div className="milestones">{p.managed.milestones.map((m,i)=><div key={m.id} className={m.done?'done':''}><span>{m.done?<Check size={14}/>:i+1}</span><strong>{m.name}</strong><small>{m.done?'Complete':'Ahead'}</small></div>)}{!p.managed.milestones.length&&<p className="muted">Milestones will be defined during project planning.</p>}</div></Card></div><div className="detail-grid"><Card title={p.narrative.summary} eyebrow="YOUR PROJECT MANAGER’S PERSPECTIVE"><p className="narrative-body">{p.managed.description}</p><div className="narrative-value"><Check size={18}/><p>{p.narrative.value||'Outcomes will be shared when the project scope is confirmed.'}</p></div><div className="row"><Avatar person={pm}/><div><strong>{pm.name}</strong><div className="muted small-text">Updated {p.narrative.updatedAt?date(p.narrative.updatedAt):'when published'}</div></div></div></Card><Card title="What happens next" eyebrow="DECISIONS & NEXT STEPS">{p.narrative.risk&&<div className="risk-box"><Flag size={17}/><div><strong>Timeline / delivery watch</strong><p>{p.narrative.risk}</p></div></div>}{p.narrative.decision&&<div className="decision"><span>DECISION NEEDED</span><p>{p.narrative.decision}</p></div>}<div className="decision"><span>RECOMMENDED NEXT STEP</span><p>{p.narrative.nextStep||'Your project lead will share the next step.'}</p></div></Card></div>{children.length>0&&<><div className="section-title"><h2>Connected sub-projects</h2><span className="muted">Included in the umbrella totals above</span></div><div className="project-grid">{children.map(x=><ProjectCard key={x.id} project={x}/>)}</div></>}<div className="section-title"><h2>Your project team</h2><Link className="text-link" to="/team">Meet the full team <ArrowUpRight size={16}/></Link></div><div className="team-grid">{data.people.filter(x=>p.managed.teamIds.includes(x.id)||x.id===p.managed.managerId).map(person=><Card key={person.id}><div className="row"><Avatar person={person}/><div><h3>{person.name}</h3><p className="muted">{person.role}</p></div></div><div className="contact-lines"><span>{person.email}</span><span>{person.phone}</span></div></Card>)}</div>{role==='admin'&&<Card title="Internal project notes" eyebrow="MORRIS ONLY"><p>{p.managed.internalNotes||'No internal notes yet.'}</p><p className="footnote">Protected manual metadata · External sync disabled · {p.managed.visible?'Shared with client':'Hidden from client'}</p><button className="button" onClick={()=>update(d=>({...d,projects:d.projects.map(x=>x.id===p.id?{...x,managed:{...x.managed,visible:!x.managed.visible}}:x)}))}>{p.managed.visible?'Hide from client':'Share with client'}</button></Card>}{editing&&<ProjectEditor project={p} onClose={()=>setEditing(false)}/>}</>}
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { Pencil, Check, Flag, ArrowUpRight } from "lucide-react";
+import { usePortal } from "../services/PortalContext";
+import { analytics } from "../domain/analytics";
+import {
+  projectHealth,
+  projectForecast,
+  hierarchyLabel,
+} from "../domain/experience";
+import { AS_OF } from "../data/seed";
+import { Card, Avatar, Progress, Badge, date, number } from "../components/ui";
+import {
+  Stat,
+  HealthBadge,
+  Confidence,
+  PremiumProjectCard,
+  Definition,
+} from "../components/Experience";
+import { BurnChart } from "../components/Charts";
+import { Contribution } from "../components/PortfolioVisuals";
+import { ProjectEditor } from "./ProjectEditor";
+export { NewProject } from "./ProjectEditor";
+export function ProjectDetail() {
+  const { id } = useParams();
+  const { data, role } = usePortal();
+  const [editing, setEditing] = useState(false);
+  const p = data.projects.find((x) => x.id === id);
+  if (!p)
+    return (
+      <Card>
+        <h1>Project unavailable</h1>
+        <p>This record may not be shared with the client.</p>
+        <Link to="/projects">Return to projects</Link>
+      </Card>
+    );
+  const a = analytics(data, p.id);
+  const forecast = projectForecast(data, p);
+  const pm = data.people.find((t) => t.id === p.managed.managerId);
+  const parent = data.projects.find((x) => x.id === p.managed.parentId);
+  const category = data.categories.find((c) => c.id === p.managed.categoryId);
+  const children = data.projects.filter((x) => x.managed.parentId === p.id);
+  const next = p.managed.milestones.find((m) => !m.done);
+  const team = data.people.filter(
+    (t) => p.managed.teamIds.includes(t.id) || t.id === p.managed.managerId,
+  );
+  const completed = p.managed.milestones.filter((m) => m.done);
+  const length = Math.max(
+    1,
+    Date.parse(p.managed.end) - Date.parse(p.managed.start),
+  );
+  const point = Math.max(
+    0,
+    Math.min(
+      100,
+      ((Date.parse(AS_OF) - Date.parse(p.managed.start)) / length) * 100,
+    ),
+  );
+  return (
+    <>
+      <section className="project-hero">
+        <div className="row between">
+          <span className="eyebrow">
+            {hierarchyLabel(data, p)} ·{" "}
+            {p.external.workOrder || "NOT INITIALIZED"}
+          </span>
+          <HealthBadge health={projectHealth(data, p)} />
+        </div>
+        <h1>{p.managed.name}</h1>
+        <p>{category?.name}</p>
+        {parent && (
+          <Link className="parent-caption" to={`/projects/${parent.id}`}>
+            Within {parent.external.workOrder} · {parent.managed.name}{" "}
+            <ArrowUpRight size={14} />
+          </Link>
+        )}
+        <div className="project-hero-bottom">
+          <div>
+            <span>PROJECT MANAGER</span>
+            <strong>{pm?.name || "Contact not shared"}</strong>
+          </div>
+          <div>
+            <span>START</span>
+            <strong>{date(p.managed.start)}</strong>
+          </div>
+          <div>
+            <span>TARGET</span>
+            <strong>{date(p.managed.end)}</strong>
+          </div>
+          <div>
+            <span>REPORTED PROGRESS</span>
+            <strong>{p.managed.progress}%</strong>
+          </div>
+          <Badge status={p.managed.status} />
+          {role === "admin" && (
+            <button className="button primary" onClick={() => setEditing(true)}>
+              <Pencil size={15} />
+              Edit project
+            </button>
+          )}
+        </div>
+      </section>
+      <div className="executive-stats">
+        <Stat
+          label="EFFORT INVESTED"
+          value={a.hours}
+          unit="hrs"
+          detail={
+            children.length
+              ? "Direct + scoped sub-project effort"
+              : "Direct project time"
+          }
+        />
+        <Stat
+          label="CAPPED / PLANNED"
+          value={p.managed.cap}
+          unit="hrs"
+          detail={`${number(p.managed.monthlyCap)} hours monthly cap`}
+        />
+        <Stat
+          label="UTILIZATION"
+          value={Math.round(a.utilization)}
+          unit="%"
+          detail={`${number(Math.max(0, p.managed.cap - a.hours))} hours remaining within cap`}
+        />
+        <Stat
+          label="PROJECTED TOTAL"
+          value={a.forecast}
+          unit="hrs"
+          detail={`${number(a.remaining)} hours estimated to finish`}
+        />
+      </div>
+      <div className="executive-columns">
+        <Card title="A clear purpose" eyebrow="WHAT & WHY">
+          <p className="purpose-text">{p.managed.description}</p>
+          <div className="purpose-value">
+            <span>CLIENT VALUE</span>
+            <p>
+              {p.narrative.value ||
+                "The project lead will share the intended outcomes here."}
+            </p>
+          </div>
+          <div className="owner-inline">
+            {pm && <Avatar person={pm} />}
+            <div>
+              <strong>{pm?.name || "Project lead"}</strong>
+              <span>
+                {pm?.role || "Contact details will be shared when available."}
+              </span>
+            </div>
+          </div>
+        </Card>
+        <Card title="Effort & delivery pace" eyebrow="ACTUAL VS PLAN">
+          <BurnChart projectId={p.id} />
+          <div className="row between">
+            <span>{number(a.monthly[5])} hours in October</span>
+            <span>{number(p.managed.monthlyCap)} monthly cap</span>
+          </div>
+          {a.monthly[5] > p.managed.monthlyCap && (
+            <p className="warning-text">
+              October effort exceeds the monthly cap by{" "}
+              {number(a.monthly[5] - p.managed.monthlyCap)} hours.
+            </p>
+          )}
+          <Confidence project={p} hours={a.hours} />
+        </Card>
+      </div>
+      <Card title="From alignment to delivery" eyebrow="TIMELINE & MILESTONES">
+        <div className="delivery-timeline">
+          <div className="row between">
+            <span>{date(p.managed.start)}</span>
+            <span>Target {date(p.managed.end)}</span>
+          </div>
+          <div className="delivery-track">
+            <span style={{ width: `${p.managed.progress}%` }} />
+            <i
+              style={{ left: `${point}%` }}
+              title={`Reporting date ${AS_OF}`}
+            />
+          </div>
+          <p>
+            Reporting point: {date(AS_OF)} ·{" "}
+            {forecast.estimatedCompletion
+              ? `Pace-based estimate: ${date(forecast.estimatedCompletion)}`
+              : "Pace-based date not available"}
+          </p>
+        </div>
+        <div className="milestone-ladder">
+          {p.managed.milestones.map((m, i) => (
+            <div key={m.id} className={m.done ? "done" : ""}>
+              <span>
+                {m.done ? <Check size={16} /> : String(i + 1).padStart(2, "0")}
+              </span>
+              <h3>{m.name}</h3>
+              <small>
+                {m.done
+                  ? "Completed"
+                  : m.targetDate
+                    ? date(m.targetDate)
+                    : "Ahead · date to be agreed"}
+              </small>
+            </div>
+          ))}
+        </div>
+        {!p.managed.milestones.length && <p>No milestones recorded yet.</p>}
+        <Definition>
+          Dates are manually maintained targets. The completion estimate
+          extrapolates recorded hours per elapsed calendar day; it is not a
+          delivery commitment. No date is estimated without observed pace.
+        </Definition>
+      </Card>
+      <div className="executive-columns">
+        <Card
+          title="The project lead’s perspective"
+          eyebrow="PROJECT MANAGER UPDATE"
+        >
+          <blockquote>
+            {p.narrative.summary || "An update will be shared soon."}
+          </blockquote>
+          <p className="small-text">
+            {pm?.name || "Project lead"} ·{" "}
+            {p.narrative.updatedAt || "Not published"}
+          </p>
+          <div className="narrative-section">
+            <span>CURRENT FOCUS</span>
+            <p>
+              {next
+                ? `Working toward ${next.name.toLowerCase()}.`
+                : "All recorded milestones are complete."}
+            </p>
+          </div>
+          <div className="narrative-section">
+            <span>NEXT STEPS</span>
+            <p>
+              {p.narrative.nextStep ||
+                "The next step will be confirmed with the project lead."}
+            </p>
+          </div>
+        </Card>
+        <Card title="Progress made tangible" eyebrow="ACCOMPLISHMENTS">
+          <div className="completion-counter">
+            {completed.length}
+            <small> of {p.managed.milestones.length} milestones complete</small>
+          </div>
+          <Progress
+            value={
+              p.managed.milestones.length
+                ? (completed.length / p.managed.milestones.length) * 100
+                : 0
+            }
+          />
+          <ul className="delivery-list">
+            {completed.map((m) => (
+              <li key={m.id}>
+                <Check size={16} />
+                <b>{m.name}</b>
+              </li>
+            ))}
+          </ul>
+          {!completed.length && (
+            <p>
+              Milestones are ahead of us. This area will reflect reported
+              completion.
+            </p>
+          )}
+          <p>{p.narrative.value}</p>
+        </Card>
+      </div>
+      <div className="executive-columns">
+        <Card title="Risks & watch items" eyebrow="WHAT TO MONITOR">
+          <div className="risk-box">
+            <Flag size={18} />
+            <p>{p.narrative.risk || "No published risk has been recorded."}</p>
+          </div>
+          {a.forecast > p.managed.cap && (
+            <p className="warning-text">
+              Forecast exceeds capped effort by{" "}
+              {number(a.forecast - p.managed.cap)} hours. Review scope and pace
+              with the lead.
+            </p>
+          )}
+        </Card>
+        <Card title="Decisions that unlock progress" eyebrow="CLIENT ACTION">
+          <p className="purpose-text">
+            {p.narrative.decision ||
+              "No published decision is currently required."}
+          </p>
+          <p className="small-text">
+            Decision owner / coordination: {pm?.name || "Project lead"}
+          </p>
+        </Card>
+      </div>
+      {children.length > 0 && (
+        <>
+          <Contribution projectId={p.id} />
+          <div className="section-title">
+            <h2>Connected sub-projects</h2>
+            <span>{children.length} scoped components</span>
+          </div>
+          <div className="premium-project-grid">
+            {children.map((c) => (
+              <PremiumProjectCard key={c.id} project={c} />
+            ))}
+          </div>
+        </>
+      )}
+      <Card title="Your project team" eyebrow="WHO TO CONTACT">
+        <div className="project-team-grid">
+          {team.map((t) => (
+            <div key={t.id}>
+              <Avatar person={t} />
+              <h3>{t.name}</h3>
+              <span className="meta-label">
+                {t.id === p.managed.managerId
+                  ? "Project manager"
+                  : "Delivery team"}
+              </span>
+              <p>{t.role}</p>
+              <p>
+                {t.email}
+                <br />
+                {t.phone}
+              </p>
+            </div>
+          ))}
+        </div>
+        {!team.length && <p>Team contacts are not currently shared.</p>}
+      </Card>
+      {role === "admin" && (
+        <Card
+          title="Internal project record"
+          eyebrow="MORRIS MANAGED · NEVER IN CLIENT VIEW"
+        >
+          <p>{p.managed.internalNotes || "No internal notes yet."}</p>
+          <div className="ownership-strip">
+            <span>
+              Mock QBO: {p.external.qboProjectId || "Not initialized"}
+            </span>
+            <span>
+              Client visibility: {p.managed.visible ? "Shared" : "Hidden"}
+            </span>
+            <span>
+              Narrative: {p.narrative.published ? "Published" : "Draft"}
+            </span>
+          </div>
+        </Card>
+      )}
+      {editing && (
+        <ProjectEditor project={p} onClose={() => setEditing(false)} />
+      )}
+    </>
+  );
+}
