@@ -1,0 +1,1 @@
+Place an approved Morris Interactive logo here, then set partnerLogo in src/config/branding.ts. Paths are relative to the Vite base URL for GitHub Pages compatibility. Until supplied, the application uses a plain text service-partner label.
